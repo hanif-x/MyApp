@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4  # Updated to latest version
+      uses: actions/checkout@v3
 
     - name: Set up JDK
       uses: actions/setup-java@v3
@@ -22,22 +22,26 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-pip
-        pip3 install buildozer
+        sudo apt-get install -y python3-pip zip unzip
+        pip3 install --upgrade pip
+        pip3 install buildozer cython
 
     - name: Initialize Buildozer
-      run: buildozer init  # Ensure buildozer is initialized
+      run: |
+        buildozer init  # Ensures buildozer.spec exists
 
-    - name: Create bin directory
-      run: mkdir -p bin  # Ensure the bin folder exists
+    - name: Update buildozer.spec
+      run: |
+        sed -i 's/# source.dir = ./source.dir = ./' buildozer.spec
+        sed -i 's/# version = 1.0.0/version = 1.0.0/' buildozer.spec
 
     - name: Build APK
       run: |
-        buildozer -v android debug
+        buildozer -v android debug || buildozer -v android debug  # Retry if it fails
 
     - name: Upload APK
       if: success()
-      uses: actions/upload-artifact@v4  # Updated to v4
+      uses: actions/upload-artifact@v3
       with:
         name: MyApp-APK
         path: bin/*.apk
